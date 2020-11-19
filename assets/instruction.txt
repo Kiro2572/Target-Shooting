@@ -1,0 +1,19 @@
+Controls:
+  LMB         ==>   Shoot
+  RMB         ==>   Reload
+  Scroll Up   ==>   Next Weapon
+  Scroll Down ==>   Previous Weapon
+  Space       ==>   Pause/Unpause Game
+  * Hold LMB to shoot continously on some weapon
+  
+Targets:
+  Red Target     ==>   Get Scores
+  Yellow Target  ==>   Get Bullets
+  Green Target   ==>   Get Weapon
+  * Target will disappear after 5 seconds
+  * Losing a target will decreasing your score
+  
+Lose Conditions:
+  Your score decreasing until it's below 0
+  You let 20 target disappear
+  You don't have any weapon left

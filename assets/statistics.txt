@@ -1,0 +1,4 @@
+highscore = 11868
+accuracy = 79.82
+shoot_number = 0
+target_hit = 0
