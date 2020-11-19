@@ -78,7 +78,7 @@ target_lost_sfx = pygame.mixer.Sound("assets/sfx/target_lost.wav")
 
 # === MISC =======================
 target_weights = [88, 9, 3]
-weapon_weights = [47, 36, 12, 5]
+weapon_weights = [47, 36, 12, 5, 0]
 
 level_mult = 1000
 target_spawn_mult = 0.9
@@ -101,4 +101,5 @@ weapons.append(revolver)
 weapons.append(handgun)
 weapons.append(rifle)
 weapons.append(machine_gun)
+weapons.append(god_killer)
 # ================================

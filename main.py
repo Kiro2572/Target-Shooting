@@ -59,9 +59,10 @@ def change_weapon(i):
         st.change_weapon_sfx.play()
 
 
-def add_weapon():
+def add_weapon(new_weapon=None):
     weapon_names = [i.name for i in weapons]
-    new_weapon = obj.Weapon(*choices(st.weapons, weights=st.weapon_weights)[0])
+    if not new_weapon:
+        new_weapon = obj.Weapon(*choices(st.weapons, weights=st.weapon_weights)[0])
 
     try:
         index = weapon_names.index(new_weapon.name)
@@ -96,7 +97,7 @@ def new_game(screen, clock):
     target_hit = 0
 
     level = 1
-    score = 10000
+    score = 0
 
     target_spawn = 2500
     target_lost = 0
@@ -149,6 +150,22 @@ def draw_score(screen):
     screen.blit(accuracy_srf, accuracy_rect)
 
 
+def command_handler(command):
+    print(command)
+    if command[0] == "give_weapon":
+        requested_name = " ".join(command[1:])
+        weapon_names = [i[0] for i in st.weapons]
+        try:
+            index = weapon_names.index(requested_name)
+            new_weapon = obj.Weapon(*st.weapons[index])
+            add_weapon(new_weapon)
+        except ValueError:
+            pass
+    if command[0] == "give_bullets":
+        bullets_increment = int(command[1])
+        current_weapon.side_bullets += bullets_increment
+
+
 def event_handler(screen, target_group, clock):
     global highscore, accuracy, shoot_number, target_hit, score, level, target_spawn, target_lost
 
@@ -160,6 +177,8 @@ def event_handler(screen, target_group, clock):
         if event.type == KEYDOWN:
             if event.key == K_SPACE:
                 pause(screen, clock)
+            if event.key == K_BACKQUOTE and event.mod == KMOD_LCTRL:
+                command_line(screen, clock)
 
         if event.type == MOUSEWHEEL and len(weapons) > 1:
             change_weapon(event.y)
@@ -248,18 +267,18 @@ def home():
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1:
                     st.shoot_sfx.play()
-                    if play_rect.collidepoint(pygame.mouse.get_pos()):
+                    if play_rect.collidepoint(event.pos):
                         new_game(screen, clock)
-                    if quit_rect.collidepoint(pygame.mouse.get_pos()):
+                    if quit_rect.collidepoint(event.pos):
                         pygame.quit()
                         quit()
-                    if logo_rect.collidepoint(mouse_pos := pygame.mouse.get_pos()):
-                        distance_x = abs(logo_rect.center[0] - mouse_pos[0])
-                        distance_y = abs(logo_rect.center[1] - mouse_pos[1])
+                    if logo_rect.collidepoint(event.pos):
+                        distance_x = abs(logo_rect.center[0] - event.pos[0])
+                        distance_y = abs(logo_rect.center[1] - event.pos[1])
                         distance = sqrt(distance_x ** 2 + distance_y ** 2)
 
                         if distance <= 100:
-                            bullet_holes.append(mouse_pos)
+                            bullet_holes.append(event.pos)
 
                 if event.button == 3:
                     st.full_reload_sfx.play()
@@ -326,12 +345,6 @@ def pause(screen, clock):
     quit_rect = quit_srf.get_rect()
     quit_rect.bottomleft = (130, st.screen_height / 2 + 230)
 
-    command_srf = pygame.Surface((st.screen_width, 30))
-    command_srf.fill(st.MED_GRAY)
-    command_srf.set_alpha(32)
-    command_rect = command_srf.get_rect()
-
-
     paused = True
     while paused:
         for event in pygame.event.get():
@@ -341,24 +354,22 @@ def pause(screen, clock):
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1:
                     st.shoot_sfx.play()
-                    if continue_rect.collidepoint(pygame.mouse.get_pos()):
+                    if continue_rect.collidepoint(event.pos):
                         paused = False
-                    if replay_rect.collidepoint(pygame.mouse.get_pos()):
+                    if replay_rect.collidepoint(event.pos):
                         save_stats()
                         new_game(screen, clock)
-                    if home_rect.collidepoint(pygame.mouse.get_pos()):
+                    if home_rect.collidepoint(event.pos):
                         save_stats()
                         home()
-                    if quit_rect.collidepoint(pygame.mouse.get_pos()):
+                    if quit_rect.collidepoint(event.pos):
                         save_stats()
                         quit_game()
-                    if command_rect.collidepoint(pygame.mouse.get_pos()):
-                        print("COMMAND")
                 if event.button == 3:
                     st.full_reload_sfx.play()
 
         screen.fill(st.bg_color)
-        screen.blit(command_srf, command_rect)
+        screen.blit(cmd_btn_srf, cmd_btn_rect)
 
         screen.blit(text_srf, text_rect)
         screen.blit(continue_srf, continue_rect)
@@ -367,6 +378,36 @@ def pause(screen, clock):
         screen.blit(quit_srf, quit_rect)
 
         pygame.display.update()
+
+
+def command_line(screen, clock):
+    input_box = pygame.Rect(0, 0, st.screen_width, 25)
+    text = ''
+
+    done = False
+    while not done:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                quit_game()
+            if event.type == KEYDOWN:
+                if event.key == K_RETURN:
+                    command = tuple(text.split())
+                    command_handler(command)
+                    done = True
+                if event.key == K_BACKSPACE:
+                    text = text[:-1]
+                else:
+                    text += event.unicode
+
+        text_srf = st.font_consolas_normal18.render(text, True, st.MED_GRAY)
+        text_rect = text_srf.get_rect()
+        text_rect.midleft = (10, input_box.h / 2)
+
+        pygame.draw.rect(screen, st.GRAY, input_box)
+        screen.blit(text_srf, text_rect)
+
+        pygame.display.update()
+        clock.tick(60)
 
 
 def game_over(screen, clock):
@@ -416,13 +457,13 @@ def game_over(screen, clock):
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1:
                     st.shoot_sfx.play()
-                    if replay_rect.collidepoint(pygame.mouse.get_pos()):
+                    if replay_rect.collidepoint(event.pos):
                         save_stats()
                         new_game(screen, clock)
-                    if home_rect.collidepoint(pygame.mouse.get_pos()):
+                    if home_rect.collidepoint(event.pos):
                         save_stats()
                         home()
-                    if quit_rect.collidepoint(pygame.mouse.get_pos()):
+                    if quit_rect.collidepoint(event.pos):
                         save_stats()
                         quit_game()
                 if event.button == 3:
